@@ -1,0 +1,46 @@
+html {
+	margin: 0 auto;
+	width: 1024px;
+}
+
+.error {
+	color: #ff0000;
+}
+
+.errorblock {
+	color: #000;
+	background-color: #ffEEEE;
+	border: 3px solid #ff0000;
+	padding: 8px;
+	margin: 16px;
+}
+
+.tdblue{
+	color:blue;
+}
+
+.tableNoRowcolBorder{
+	border:0;
+}
+
+.alternaterow {
+	background-color:darkgray;
+}
+
+.specialrow {
+	background-color:black;
+	color:white;
+}
+
+.thwhite{
+	color:white;
+	font-style: italic;
+}
+
+.em{
+	font-style: italic;
+}
+
+.inputBackground{
+   background-color: #FFDCB2;
+}

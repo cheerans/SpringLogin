@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans 
+    xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+    xmlns:sec="http://www.springframework.org/schema/security"
+    xmlns:mvc="http://www.springframework.org/schema/mvc"	
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+          				http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+          				http://www.springframework.org/schema/security
+         				http://www.springframework.org/schema/security/spring-security-3.1.xsd
+          				http://www.springframework.org/schema/context 
+		 	 			http://www.springframework.org/schema/context/spring-context-3.1.xsd
+		  				http://www.springframework.org/schema/mvc 
+		  				http://www.springframework.org/schema/mvc/spring-mvc-3.1.xsd">
+
+	<context:component-scan base-package="com.controller"/>
+	<context:component-scan base-package="com.spring.form"/>
+	<context:annotation-config/>
+	<mvc:annotation-driven validator="validator"/>
+
+	<bean id="ajaxViewResolver" class="com.viewResolver.AjaxViewResolver">
+        <property name="ajaxView">
+            <bean class="com.viewResolver.AjaxView" />
+        </property>
+        <property name="ajaxPrefix" value="ajax_"></property>      
+    </bean> 
+    
+ 	<bean id="viewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="viewClass" value="org.springframework.web.servlet.view.JstlView"></property>
+		<property name="prefix" value="/WEB-INF/pages/"></property>
+		<property name="suffix" value=".jsp"></property>
+	</bean>
+			
+	<!--<sec:access-denied-handler error-page="/accessDenied.do"/>-->
+    <sec:global-method-security  secured-annotations="enabled" pre-post-annotations="enabled"/>
+	 
+	<sec:http use-expressions="true" entry-point-ref="http403ForbiddenEntryPoint">		
+        		
+        <sec:intercept-url pattern="/css/**" access="permitAll" />
+        <sec:intercept-url pattern="/js/**" access="permitAll" />
+        <sec:intercept-url pattern="/images/**" access="permitAll" />
+        <sec:intercept-url pattern="/secretcodeimages/**" access="permitAll" />                
+        <sec:intercept-url pattern="/login.do" access="permitAll" />
+	 	<sec:intercept-url pattern="/createSecretCode.do" access="permitAll" />
+	 	<sec:intercept-url pattern="/home.do" access="permitAll" />
+	 	<sec:intercept-url pattern="/newUserProfile.do" access="permitAll" />
+	 	<sec:intercept-url pattern="/invalidSession.do" access="permitAll" />
+	 	<sec:intercept-url pattern="/forgotPassword.do" access="permitAll" />
+	 	<sec:intercept-url pattern="/**" access="hasRole('ROLE_USER')" />
+	 	
+	    <sec:logout invalidate-session="true" logout-url="/logout.do" logout-success-url="/"/>
+	    <sec:session-management  invalid-session-url="/invalidSession.do"  session-fixation-protection="migrateSession">        
+    		<sec:concurrency-control max-sessions="1" expired-url="/invalidSession.do"/>
+		</sec:session-management>	 			
+    </sec:http>
+	
+	<bean id="http403ForbiddenEntryPoint"   class="org.springframework.security.web.authentication.Http403ForbiddenEntryPoint" />	
+	
+	<bean id="stringLoader" class="com.util.SpringStringResource">
+		<property name="messageSource" ref="messageSource"/>
+	</bean>	
+
+	<beans:bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>validationMessages</value>
+			</list>
+		</property>
+	</beans:bean>
+
+	<bean id="validator"
+		class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean">
+		<property name="messageInterpolator">
+			<bean
+				class="org.hibernate.validator.messageinterpolation.ResourceBundleMessageInterpolator">
+				<constructor-arg index="0">
+					<bean
+						class="org.springframework.validation.beanvalidation.MessageSourceResourceBundleLocator">
+						<constructor-arg index="0" ref="messageSource" />
+					</bean>
+				</constructor-arg>
+			</bean>
+		</property>
+	</bean>
+    
+    <beans:bean id="loginService" class="com.service.LoginSvcImpl">
+    </beans:bean>
+    
+    <beans:bean id="generalService" class="com.service.GeneralSvcImpl">
+    </beans:bean>    
+	
+	<bean id="saltSource" class="org.springframework.security.authentication.dao.ReflectionSaltSource">
+        <property name="userPropertyToUse" value="salt"/>
+    </bean>
+    
+    <bean id="saltGenerator" class="com.util.RandomSaltGenerator"/>
+    
+     <bean id="randomgen" class="com.util.RandomPasswordGenerator"/>
+	
+	<bean id="passwordEncoder" class="org.springframework.security.authentication.encoding.ShaPasswordEncoder">
+	 	<constructor-arg value="256"/>
+ 		<property name="iterations" value="1024"/> 
+	</bean>	
+	
+	<bean id="loggerListener" class="org.springframework.security.authentication.event.LoggerListener"/> 
+	
+	<sec:authentication-manager alias="authenticationManager">
+		<sec:authentication-provider ref="authProv" />
+	</sec:authentication-manager>
+	
+	<bean id="authProv" class="com.authentication.MyUserDetailsAuthProvider"/>
+	
+	<bean class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+		<property name="exceptionMappings">
+			<props>
+				<prop key="org.springframework.web.servlet.PageNotFound">pageNotFound</prop>
+				<prop key="org.springframework.dao.DataAccessException">dataAccessFailure</prop>
+				<prop key="org.springframework.transaction.TransactionException">dataAccessFailure</prop>
+			</props>
+		</property>
+	</bean>
+	
+	<!--  
+		********************************************************************************************
+		********************************************************************************************
+		********************************************************************************************
+		********************************************************************************************
+	-->	
+	 <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+                <value>/WEB-INF/properties/jdbc.properties</value>
+                <value>/WEB-INF/properties/common.properties</value>
+                <value>/WEB-INF/properties/app.properties</value>
+                <value>/WEB-INF/properties/errormessage.properties</value>                
+            </list>
+        </property>
+     </bean>
+
+	<!-- Local DataSource that works in any environment -->
+	<!-- Note that DriverManagerDataSource does not pool; it is not intended for production -->	
+	<bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName"><value>${jdbc.driverClassName}</value></property>
+		<property name="url"><value>${jdbc.url}</value></property>
+		<property name="username"><value>${jdbc.username}</value></property>
+		<property name="password"><value>${jdbc.password}</value></property>
+	</bean>
+	
+	<!-- JNDI DataSource for J2EE environments -->
+	<!-- JNDI DataSource for J2EE environments -->
+    <bean id="sessionFactory"
+        class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
+        <property name="dataSource" ref="dataSource" />
+     
+        <property name="configLocation">
+            <value>/WEB-INF/hibernatecfg.xml</value>
+        </property>
+		<property name="mappingResources">
+			<list>
+			</list>
+		</property>
+        <property name="configurationClass">
+            <value>org.hibernate.cfg.AnnotationConfiguration</value>
+        </property>
+        <property name="hibernateProperties">
+            <props>
+                <prop key="hibernate.dialect">${hibernate.dialect}</prop>
+                <prop key="hibernate.show_sql">true</prop>
+            </props>
+        </property>
+    </bean>
+
+	<!-- Transaction manager for a single Hibernate SessionFactory (alternative to JTA) -->
+	<bean id="transactionManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+		<property name="sessionFactory"><ref local="sessionFactory"/></property>
+	</bean>
+
+	<bean id="shoppingCartDao" name="shoppingCartDao" class="com.dao.ShoppingCartDAOImpl" >
+		<property name="sessionFactory"><ref local="sessionFactory"/></property>
+	</bean>
+	
+	<bean id="encryptBean" class="com.util.encryption.EncryptionVisitorImpl"/>
+	
+	<bean id="decryptBean" class="com.util.encryption.DecryptionVisitorImpl"/>
+
+	<bean id="ShoppingCart" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+		<property name="transactionManager"><ref local="transactionManager"/></property>
+		<property name="target"><ref local="shoppingCartDao"/></property>
+		<property name="transactionAttributes">
+			<props>
+				<prop key="get*">PROPAGATION_REQUIRED,readOnly</prop>
+				<prop key="find*">PROPAGATION_REQUIRED,readOnly</prop>
+				<prop key="load*">PROPAGATION_REQUIRED,readOnly</prop>
+				<prop key="store*">PROPAGATION_REQUIRED</prop>
+			</props>
+		</property>
+	</bean>
+	
+	<bean id="jdbcUserService" class="com.dao.UserJdbcDaoImpl">
+		<property name="dataSource">
+			<ref bean="dataSource" />
+		</property>
+	    <property name="usersByUsernameQuery">
+	        <value>SELECT U.userid AS username, 
+	            U.userpassword as password, 
+	            'true' AS enabled,
+	            U.userpasswordsalt AS salt ,
+	            U.roles as authority
+	            FROM user U WHERE U.userid=?
+	        </value>
+	    </property>
+	    <property name="authoritiesByUsernameQuery">
+	        <value>SELECT U.userid AS username,
+	            U.roles as authority 
+	            FROM user U 
+	            WHERE U.userid=?
+	        </value>
+	    </property>
+	  <property name="enableGroups" value="false"/>
+	  <property name="enableAuthorities" value="true"/>
+	</bean> 		
+</beans>
